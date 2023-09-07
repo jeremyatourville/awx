@@ -1,0 +1,94 @@
+dnf install epel-release -y
+dnf install -y git gcc gcc-c++ ansible nodejs gettext device-mapper-persistent-data lvm2 bzip2 python3-pip -y
+dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce-repo
+dnf install docker-ce-<version>
+systemctl start docker && systemctl enable docker
+usermod -aG docker $USER
+newgrp docker
+pip3 install docker-compose
+alternatives --set python /usr/bin/python3
+git clone https://github.com/ansible/awx.git
+
+#genrate encryption key
+openssl rand -base64 30
+#copy this key to clipboard
+
+admin password = vUyOiggFCzJvTksxbbft or password
+
+cd awx/tools/docker-compose
+nano inventory
+#paste in key from clipboard
+secret_key=<key>
+QWKGJcEMjT9+l4cvNZLgo74V8Buk7NXKQtKaci1S
+
+mkdir /var/lib/pgdocker
+ansible-playbook -i inventory install.yml
+setenforce 0
+
+
+Build Error
+
+ERROR! We were unable to read either as JSON nor YAML, these are the errors we got from each:
+JSON: Expecting value: line 1 column 1 (char 0)
+
+Syntax Error while loading YAML.
+  found unknown escape character
+
+The error appears to be in '/opt/awx/tools/docker-compose/ansible/roles/sources/tasks/main.yml': line 51, column 46, but may
+be elsewhere in the file depending on the exact syntax problem.
+
+The offending line appears to be:
+
+      error_code: "{{ item | basename() | regex_replace('custom_(\\d+).html', '\\1') }}"
+      web_path: "{{ item | regex_replace('^.*\/static', '/static') }}"
+                                             ^ here
+We could be wrong, but this one looks like it might be an issue with
+missing quotes. Always quote template expression brackets when they
+start a value. For instance:
+
+    with_items:
+      - {{ foo }}
+
+Should be written as:
+
+    with_items:
+      - "{{ foo }}"
+
+line 51: 
+web_path: "{{ item | regex_replace('^.*\/static', '/static') }}"
+
+modified to :
+web_path: "{{ item | regex_replace('^.*\''/static', '/static') }}"
+
+nano awx/tools/docker-compose/inventory
+modify pg_password, secret_key and awx_image values
+cd awx/
+make docker-compose-build
+# wait for the build to complete
+# docker images will show awx devel image available
+make docker-compose
+# wait for migrations to complete and the logs to "stop" output
+
+# now open another terminal and run this command against the container
+docker exec tools_awx_1 make clean-ui ui-devel
+
+# this command will take a few minutes.  
+# when migrations are complete and the ui is built you can login-
+# https://<host>8043/#/home
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*** [Makefile:518: docker-compose-sources] Error 4
+
